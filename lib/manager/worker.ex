@@ -9,6 +9,11 @@ defmodule Manager.Worker do
     Process.register(pid, @parrent_name)
   end
 
+  @spec add_node(non_neg_integer()) :: :ok
+  def add_node(n) do
+    Enum.each(1..n, fn _n -> send(:father, {:add_node}) end)
+  end
+
   @spec get_state(atom()) :: list(Node.t())
   def get_state(pid) do
     send(pid, {self(), :get_state})
@@ -18,12 +23,27 @@ defmodule Manager.Worker do
     end
   end
 
+  @spec kill_node(pid()) :: any()
   def kill_node(pid) do
     send(:father, {pid, :kill_node})
   end
 
-  def add_node(n) do
-    Enum.each(1..n, fn _n -> send(:father, {:add_node}) end)
+  @spec kill_every_nth_node(non_neg_integer()) :: :ok
+  def kill_every_nth_node(n) do
+    list =
+      for node <- get_state() do
+        node.pid
+      end
+
+    list = Enum.drop_every(list, n)
+
+    Enum.each(list, fn node -> send(:father, {node, :kill_node}) end)
+  end
+
+  @spec kill_leader_pid() :: any()
+  def kill_leader_pid() do
+    leader = hd(get_state()).leader
+    kill_node(leader)
   end
 
   @spec processes_alive?(pid) :: list(boolean())
@@ -140,18 +160,5 @@ defmodule Manager.Worker do
     receive do
       state when is_list(state) -> state
     end
-  end
-
-  def kill_pids() do
-    list =
-      for n <- get_state() do
-        n.pid
-      end
-
-    list = List.delete_at(list, 2)
-    list = List.delete_at(list, 4)
-    list = List.delete_at(list, 6)
-
-    Enum.each(list, fn node -> send(:father, {node, :kill_node}) end)
   end
 end

@@ -1,21 +1,33 @@
 # TaskNodes
 
-**TODO: Add description**
+## Overview
+This project is about implementing an algorithm that allows selecting a
+**Leader** from nodes.
 
-## Installation
-
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed
-by adding `task_nodes` to your list of dependencies in `mix.exs`:
-
-```elixir
-def deps do
-  [
-    {:task_nodes, "~> 0.1.0"}
-  ]
-end
+## Clone this repository
+```
+git clone https://github.com/DanielaIvanova/nodes_example
+cd nodes_example
 ```
 
-Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
-and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
-be found at [https://hexdocs.pm/task_nodes](https://hexdocs.pm/task_nodes).
+## Usage example
 
+ First, you have to start supervisor process that is responsible for storing the state for all nodes, that will be created.
+ ``` elixir
+ Manager.Worker.start_supervisor 
+ ``` 
+
+ Then, you can create as much `Nodes` as you wish. In this example will be created 10 processes.
+``` elixir
+Manager.Worker.add_node(10)
+```
+
+To check the current state:
+``` elixir
+Manager.Worker.get_state :father
+```
+
+You can also check, if processes are alive:
+``` elixir
+Manager.Worker.processes_alive? :father
+```
