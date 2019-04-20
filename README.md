@@ -4,10 +4,12 @@
 This project is about implementing an algorithm that allows selecting a
 **Leader** from nodes.
 
-## Clone this repository
+## Clone this repository, fetch dependencies and start the application
 ```
 git clone https://github.com/DanielaIvanova/nodes_example
 cd nodes_example
+mix deps.get
+iex -S mix
 ```
 
 ## Usage example
