@@ -19,15 +19,30 @@ cd nodes_example
 
  Then, you can create as much `Nodes` as you wish. In this example will be created 10 processes.
 ``` elixir
-Manager.Worker.add_node(10)
+Manager.Worker.add_nodes(10)
 ```
 
 To check the current state:
 ``` elixir
-Manager.Worker.get_state :father
+Manager.Worker.get_state(:father)
 ```
 
-You can also check, if processes are alive:
+To check, if the processes are alive:
 ``` elixir
-Manager.Worker.processes_alive? :father
+Manager.Worker.processes_alive?(:father)
+```
+
+To kill process by passing the `pid` of the process:
+``` elixir
+Manager.Worker.kill_node(pid)
+```
+
+To kill every `n`th process:
+``` elixir
+Manager.Worker.kill_every_nth_node(n)
+```
+
+To kill the **Leader** process:
+``` elixir
+Manager.Worker.kill_leader_pid
 ```

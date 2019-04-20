@@ -1,19 +1,61 @@
 defmodule Manager.Worker do
+  @moduledoc """
+  Module containing processes interaction functionality
+  """
   alias Manager.Node
-  @parrent_name :father
-  @t 500
 
+  @parrent_name :father
+  @t 50
+
+  @doc """
+  Create supervisor process.
+
+  ## Examples
+
+      iex> Manager.Worker.start_supervisor
+      true
+
+  """
   @spec start_supervisor() :: true
   def start_supervisor do
     pid = spawn(fn -> loop([]) end)
     Process.register(pid, @parrent_name)
   end
 
-  @spec add_node(non_neg_integer()) :: :ok
-  def add_node(n) do
+  @doc """
+  Create n different processes.
+
+  ## Examples
+
+      iex> Manager.Worker.add_nodes(10)
+      :ok
+
+  """
+  @spec add_nodes(non_neg_integer()) :: :ok
+  def add_nodes(n) do
     Enum.each(1..n, fn _n -> send(:father, {:add_node}) end)
   end
 
+  @doc """
+  Check the state of the supervisor process.
+
+  ## Examples
+
+      iex> Manager.Worker.get_state(:father)
+      [
+       %Manager.Node{leader: #PID<0.154.0>, pid: #PID<0.154.0>},
+       %Manager.Node{leader: #PID<0.154.0>, pid: #PID<0.153.0>},
+       %Manager.Node{leader: #PID<0.154.0>, pid: #PID<0.152.0>},
+       %Manager.Node{leader: #PID<0.154.0>, pid: #PID<0.151.0>},
+       %Manager.Node{leader: #PID<0.154.0>, pid: #PID<0.150.0>},
+       %Manager.Node{leader: #PID<0.154.0>, pid: #PID<0.149.0>},
+       %Manager.Node{leader: #PID<0.154.0>, pid: #PID<0.148.0>},
+       %Manager.Node{leader: #PID<0.154.0>, pid: #PID<0.147.0>},
+       %Manager.Node{leader: #PID<0.154.0>, pid: #PID<0.146.0>},
+       %Manager.Node{leader: #PID<0.154.0>, pid: #PID<0.144.0>}
+      ]
+
+  """
   @spec get_state(atom()) :: list(Node.t())
   def get_state(pid) do
     send(pid, {self(), :get_state})
@@ -23,29 +65,65 @@ defmodule Manager.Worker do
     end
   end
 
-  @spec kill_node(pid()) :: any()
+  @doc """
+  Kill process by passing the PID of the process.
+
+  ## Examples
+
+      iex> Manager.Worker.kill_node(pid("0.154.0"))
+      {#PID<0.154.0>, :kill_node}
+
+  """
+  @spec kill_node(pid()) :: tuple()
   def kill_node(pid) do
     send(:father, {pid, :kill_node})
   end
 
+  @doc """
+  Kill every nth process.
+
+  ## Examples
+
+      iex> Manager.Worker.kill_every_nth_node(2)
+      :ok
+
+  """
   @spec kill_every_nth_node(non_neg_integer()) :: :ok
   def kill_every_nth_node(n) do
-    list =
+    all_pids =
       for node <- get_state() do
         node.pid
       end
 
-    list = Enum.drop_every(list, n)
+    list_to_kill = Enum.drop_every(all_pids, n)
 
-    Enum.each(list, fn node -> send(:father, {node, :kill_node}) end)
+    Enum.each(list_to_kill, fn node -> send(:father, {node, :kill_node}) end)
   end
 
-  @spec kill_leader_pid() :: any()
+  @doc """
+  Kill the Leader process.
+
+  ## Examples
+
+      iex> Manager.Worker.kill_leader_pid
+      {#PID<0.151.0>, :kill_node}
+
+  """
+  @spec kill_leader_pid() :: tuple()
   def kill_leader_pid() do
     leader = hd(get_state()).leader
     kill_node(leader)
   end
 
+  @doc """
+  Check in supervisor state if the processes are alive.
+
+  ## Examples
+
+      iex> Manager.Worker.processes_alive?(:father)
+      [true, true, true. true]
+
+  """
   @spec processes_alive?(pid) :: list(boolean())
   def processes_alive?(pid) do
     send(pid, {self(), :get_state})
@@ -73,6 +151,10 @@ defmodule Manager.Worker do
 
       {from, :get_state} ->
         send(from, state)
+        loop(state)
+
+      {from, :get_leader} ->
+        send(from, hd(state).leader)
         loop(state)
 
       {from, :update_leader} ->
@@ -113,7 +195,7 @@ defmodule Manager.Worker do
         Process.sleep(time)
         mail_box(time)
 
-      {from, :alive} when from != self() ->
+      {from, :alive?} when from != self() ->
         send(from, {self(), :finethanks})
         state = get_state()
         start_election(self(), state)
