@@ -16,7 +16,7 @@ defmodule Manager.Worker do
       true
 
   """
-  @spec start_supervisor() :: true
+  @spec start_supervisor :: true
   def start_supervisor do
     pid = spawn(fn -> loop([]) end)
     Process.register(pid, @parrent_name)
@@ -31,7 +31,7 @@ defmodule Manager.Worker do
       :ok
 
   """
-  @spec add_nodes(non_neg_integer()) :: :ok
+  @spec add_nodes(non_neg_integer) :: :ok
   def add_nodes(n) do
     Enum.each(1..n, fn _n -> send(:father, {:add_node}) end)
   end
@@ -56,7 +56,7 @@ defmodule Manager.Worker do
       ]
 
   """
-  @spec get_state(atom()) :: list(Node.t())
+  @spec get_state(atom) :: list(Node.t())
   def get_state(pid) do
     send(pid, {self(), :get_state})
 
@@ -74,7 +74,7 @@ defmodule Manager.Worker do
       {#PID<0.154.0>, :kill_node}
 
   """
-  @spec kill_node(pid()) :: tuple()
+  @spec kill_node(pid) :: tuple
   def kill_node(pid) do
     send(:father, {pid, :kill_node})
   end
@@ -88,7 +88,7 @@ defmodule Manager.Worker do
       :ok
 
   """
-  @spec kill_every_nth_node(non_neg_integer()) :: :ok
+  @spec kill_every_nth_node(non_neg_integer) :: :ok
   def kill_every_nth_node(n) do
     all_pids =
       for node <- get_state() do
@@ -109,8 +109,8 @@ defmodule Manager.Worker do
       {#PID<0.151.0>, :kill_node}
 
   """
-  @spec kill_leader_pid() :: tuple()
-  def kill_leader_pid() do
+  @spec kill_leader_pid :: tuple
+  def kill_leader_pid do
     leader = hd(get_state()).leader
     kill_node(leader)
   end
@@ -124,7 +124,7 @@ defmodule Manager.Worker do
       [true, true, true. true]
 
   """
-  @spec processes_alive?(pid) :: list(boolean())
+  @spec processes_alive?(pid) :: list(boolean)
   def processes_alive?(pid) do
     send(pid, {self(), :get_state})
 

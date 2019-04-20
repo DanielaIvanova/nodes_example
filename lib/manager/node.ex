@@ -33,6 +33,6 @@ defmodule Manager.Node do
       %Manager.Node{leader: #PID<0.111.0>, pid: #PID<0.111.0>}
 
   """
-  @spec create(pid, pid) :: Manager.Node.t()
+  @spec create(pid, pid) :: Node.t()
   def create(pid, leader), do: %Node{pid: pid, leader: leader}
 end
