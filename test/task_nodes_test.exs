@@ -2,7 +2,7 @@ defmodule TaskNodesTest do
   use ExUnit.Case
   alias Manager.Worker
 
-  @t 500
+  @t 2500
 
   setup do
     Worker.start_supervisor()
@@ -23,7 +23,9 @@ defmodule TaskNodesTest do
   test "election" do
     assert Worker.add_nodes(10) == :ok
     leader_pid = hd(Worker.get_state(:father)).leader
+    Process.sleep(@t)
     Worker.kill_leader_pid()
+    Process.sleep(@t)
     assert hd(Worker.get_state(:father)).leader != leader_pid
     Process.sleep(@t)
 

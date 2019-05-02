@@ -3,9 +3,10 @@ defmodule Manager.Worker do
   Module containing processes interaction functionality
   """
   alias Manager.Node
+  require Logger
 
   @parrent_name :father
-  @t 50
+  @t 500
 
   @doc """
   Create supervisor process.
@@ -61,7 +62,7 @@ defmodule Manager.Worker do
     send(pid, {self(), :get_state})
 
     receive do
-      msg -> msg
+      msg when is_list(msg) -> msg
     end
   end
 
@@ -167,7 +168,7 @@ defmodule Manager.Worker do
 
       {pid, :kill_node} ->
         Process.exit(pid, :kill)
-        IO.puts("The process: #{inspect(pid)} is dead!")
+        Logger.info("#{inspect(pid)} was killed!")
 
         new_state =
           Enum.reduce(state, [], fn node, acc ->
@@ -185,7 +186,8 @@ defmodule Manager.Worker do
   def mail_box(time) do
     receive do
       {from, :iamtheking} ->
-        if List.first(get_state()).leader < from do
+        if List.first(get_state()).leader == from do
+          Logger.info("Node: #{inspect(self())} says, that #{inspect(from)} is the leader now.")
           send(from, {self(), :ping})
         end
 
@@ -196,9 +198,18 @@ defmodule Manager.Worker do
         mail_box(time)
 
       {from, :alive?} when from != self() ->
-        send(from, {self(), :finethanks})
-        state = get_state()
-        start_election(self(), state)
+        list_of_pids =
+          for node <- get_state() do
+            node.pid
+          end
+
+        if Enum.max(list_of_pids) == self() do
+          Enum.each(list_of_pids, fn pid -> send(pid, {:iamtheking, self()}) end)
+          send(@parrent_name, {self(), :update_leader})
+        else
+          send(from, {self(), :finethanks})
+        end
+
         mail_box(time)
 
       {from, :ping} when from != self() ->
@@ -206,7 +217,7 @@ defmodule Manager.Worker do
         mail_box(time)
 
       {from, :pong} ->
-        send(from, {self(), :ping})
+        Process.send_after(from, {self(), :ping}, time)
         mail_box(time)
     after
       4 * time ->
@@ -216,6 +227,8 @@ defmodule Manager.Worker do
   end
 
   defp start_election(pid, state) do
+    Logger.info("#{inspect(pid)} started election.")
+
     list_of_pids =
       for node <- state do
         node.pid
